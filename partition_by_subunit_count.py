@@ -3,7 +3,7 @@ import pandas as pd
 input_file = "./stats_d_ellipsoids_interior.xlsx"
 output_file = "./output.xlsx"
 
-# Do not touch anything below this line
+# DO NOT TOUCH ANYTHING BELOW THIS LINE
 
 sheet_name = "Cumulative data"
 volume_column_name = 'Volume_pL_'
@@ -14,7 +14,7 @@ df = pd.read_excel(io=input_file, sheet_name=sheet_name)
 startRow = (df == volume_column_name).any(axis=1)
 startIdx = df.index[startRow].tolist()
 
-# Trim rows 
+# Trim rows
 df = df.rename(columns=df.iloc[startIdx[0]])
 df = df.tail(df.shape[0]-startIdx[0]-1)
 
@@ -38,7 +38,3 @@ for x in valid_values:
 with pd.ExcelWriter(output_file) as writer:
     for df, num in zip(new_dfs, valid_values):
         df.to_excel(writer, sheet_name=f'{num} neighbors', index=False)
-
-
-
-
