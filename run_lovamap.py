@@ -25,6 +25,7 @@ bar = [
     "[ =      ]",
 ]
 
+
 class WaitAnimation:
     def __init__(self):
         self.work_title = ''
@@ -42,14 +43,17 @@ class WaitAnimation:
     def animate(self):
         for c in itertools.cycle(bar):
             if not self.running:
-                print("\r\033[K", end='')
-                print(f'\r[Complete] {self.work_title}', end='\n')
+                sys.stdout.write("\r\033[K")
+                sys.stdout.write(f'\r[\033[92mComplete\033[0m] {self.work_title}\n')
+                sys.stdout.flush()
                 break
-            print(f'\r{c} Running LOVAMAP on {self.work_title}', end='')
-            time.sleep(0.1)
+            sys.stdout.write(f'\r{c} {self.work_title}')
+            sys.stdout.flush()
+            time.sleep(0.08)
 
     def stop(self):
         self.running = False
+        self.thread.join()
 
 
 """ def join_excel_files(dir_of_files: str, full_output_file: str):
@@ -97,4 +101,9 @@ if __name__ == '__main__':
                 wait.stop()
 
         # Then, we create final sheet of each excel file and the one single big excel file.
-        eng.organize_lovamap_data(output_path, species, nargout=0)
+        # Hard-coding the file name here so I can have a consistent output
+        excel_file = f'statsbydescrip_{species}.xlsx'
+        wait = WaitAnimation()
+        wait.start(f'{os.path.join(output_path, excel_file)}')
+        eng.organize_lovamap_data(output_path, species, nargout=0, stdout=out)
+        wait.stop()
