@@ -27,7 +27,7 @@ df = df[df.columns[idx:]]
 df = df.dropna(how='all').reset_index(drop=True)
 
 # Grab all valid numbers that we'll eventually partition by
-valid_values = set(df[target_column_name].tolist())
+valid_values = sorted(set(df[target_column_name].tolist()))
 
 # Partition dataframe via Lindsay's rule
 new_dfs = []
