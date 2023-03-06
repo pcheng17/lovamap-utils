@@ -30,3 +30,36 @@ for id, str in result['subs']['names'].items():
 
 if isinstance(result['isInteriorSub'], matlab.logical):
     result['isInteriorSub'] = [val for sublist in result['isInteriorSub'] for val in sublist]
+
+
+
+## Cell
+import pandas as pd
+
+# Form all three distinct DataFrames before gluing together to write to Excel.
+
+df_global = pd.DataFrame.from_dict(global_dict)
+
+df_intersubs = pd.DataFrame()
+for key, value in intersubs_dict.items():
+    df_intersubs = pd.concat([df_intersubs, pd.DataFrame({key: value})], axis=1)
+
+df_subs = pd.DataFrame()
+for key, value in subs_dict.items():
+    df_subs = pd.concat([df_subs, pd.DataFrame({key: value})], axis=1)
+
+
+
+## Cell
+from pandas.io.formats import excel
+excel.ExcelFormatter.header_style = None
+
+# Take everything after the first underscore, but remove the extension.
+# Only take at most 30 characters.
+sheet_name = replicate.split('_', 1)[1].split('.', 1)[0]
+sheet_name = sheet_name[:30] if len(sheet_name) > 30 else sheet_name
+
+with pd.ExcelWriter('./output.xlsx') as writer:
+    df_global.to_excel(writer, sheet_name=sheet_name, header=False, index=False, startrow=0, startcol=0)
+    df_intersubs.to_excel(writer, sheet_name=sheet_name, index=False, startrow=len(df_global.index), startcol=0)
+    df_subs.to_excel(writer, sheet_name=sheet_name, index=False, startrow=len(df_global.index), startcol=len(df_intersubs.columns))
