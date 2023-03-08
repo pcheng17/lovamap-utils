@@ -63,3 +63,10 @@ with pd.ExcelWriter('./output.xlsx') as writer:
     df_global.to_excel(writer, sheet_name=sheet_name, header=False, index=False, startrow=0, startcol=0)
     df_intersubs.to_excel(writer, sheet_name=sheet_name, index=False, startrow=len(df_global.index), startcol=0)
     df_subs.to_excel(writer, sheet_name=sheet_name, index=False, startrow=len(df_global.index), startcol=len(df_intersubs.columns))
+
+# or do the following:
+
+with pd.ExcelWriter('./output.xlsx') as writer:
+    df_global.to_excel(writer, sheet_name='Global descriptors', header=False, index=False)
+    df_intersubs.to_excel(writer, sheet_name='Intersub descriptors', index=False)
+    df_subs.to_excel(writer, sheet_name='Subunit descriptors', index=False)
