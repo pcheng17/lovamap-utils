@@ -56,17 +56,46 @@ excel.ExcelFormatter.header_style = None
 
 # Take everything after the first underscore, but remove the extension.
 # Only take at most 30 characters.
-sheet_name = replicate.split('_', 1)[1].split('.', 1)[0]
-sheet_name = sheet_name[:30] if len(sheet_name) > 30 else sheet_name
+# sheet_name = replicate.split('_', 1)[1].split('.', 1)[0]
+# sheet_name = sheet_name[:30] if len(sheet_name) > 30 else sheet_name
 
-with pd.ExcelWriter('./output.xlsx') as writer:
-    df_global.to_excel(writer, sheet_name=sheet_name, header=False, index=False, startrow=0, startcol=0)
-    df_intersubs.to_excel(writer, sheet_name=sheet_name, index=False, startrow=len(df_global.index), startcol=0)
-    df_subs.to_excel(writer, sheet_name=sheet_name, index=False, startrow=len(df_global.index), startcol=len(df_intersubs.columns))
+# with pd.ExcelWriter('./output.xlsx') as writer:
+#     df_global.to_excel(writer, sheet_name=sheet_name, header=False, index=False, startrow=0, startcol=0)
+#     df_intersubs.to_excel(writer, sheet_name=sheet_name, index=False, startrow=len(df_global.index), startcol=0)
+#     df_subs.to_excel(writer, sheet_name=sheet_name, index=False, startrow=len(df_global.index), startcol=len(df_intersubs.columns))
 
 # or do the following:
 
 with pd.ExcelWriter('./output.xlsx') as writer:
-    df_global.to_excel(writer, sheet_name='Global descriptors', header=False, index=False)
-    df_intersubs.to_excel(writer, sheet_name='Intersub descriptors', index=False)
-    df_subs.to_excel(writer, sheet_name='Subunit descriptors', index=False)
+    df_global.to_excel(writer, sheet_name='Global', header=False, index=False)
+    df_intersubs.to_excel(writer, sheet_name='Intersub', index=False)
+    df_subs.to_excel(writer, sheet_name='Subunit', index=False)
+
+
+# Given a list of excel files, merge them into one file.
+import ntpath
+ntpath.basename("a/b/c")
+
+all_dfs = {}
+for file in excel_files:
+    excel = pd.ExcelFile(file)
+    all_dfs[file] = {sheet: excel.parse(sheet) for sheet in excel.sheet_names}
+
+with pd.ExcelWriter('./output.xlsx') as writer:
+    for file, dfs in all_dfs.items():
+        # Take everything after the first underscore, but remove the extension.
+        # Only take at most 30 characters.
+        sheet_name = ntpath.basename(file).split('_', 1)[1].split('.', 1)[0]
+        sheet_name = sheet_name[:30] if len(sheet_name) > 30 else sheet_name
+        dfs['Global'].to_excel(writer, sheet_name=sheet_name, header=False, index=False, startrow=0, startcol=0)
+        dfs['Intersub'].to_excel(writer, sheet_name=sheet_name, index=False, startrow=len(dfs['Global'].index), startcol=0)
+        dfs['Subunit'].to_excel(writer, sheet_name=sheet_name, index=False, startrow=len(dfs['Global'].index), startcol=len(dfs['Intersub'].columns))
+
+    # Write one final sheet of cumulated data
+    df_all_global = pd.concat([dfs['Global'] for dfs in all_dfs.values()], axis=1)
+    df_all_intersub = pd.concat([dfs['Intersub'] for dfs in all_dfs.values()], axis=0)
+    df_all_sub = pd.concat([dfs['Subunit'] for dfs in all_dfs.values()], axis=0)
+
+    df_all_global.to_excel(writer, sheet_name='Cumulative data', header=False, index=False, startrow=0, startcol=0)
+    df_all_intersub.to_excel(writer, sheet_name='Cumulative data', index=False, startrow=len(df_all_global.index), startcol=0)
+    df_all_sub.to_excel(writer, sheet_name='Cumulative data', index=False, startrow=len(df_all_global.index), startcol=len(df_all_intersub.columns))
