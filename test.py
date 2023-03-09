@@ -1,53 +1,49 @@
 import itertools
+import ntpath
 import sys
 import time
 import threading
 
 
-ids = list(result['global']['names'])
-global_dict = {
-    'names': [result['global']['names'][id] for id in ids],
-    'values': [result['global']['values'][id] for id in ids],
-}
+def get_global_data_dict(lovamap_data: dict) -> dict:
+    return {
+        str: [data['global']['values'][id]] for id, str in data['global']['names'].items()
+    }
 
-intersubs_dict = {}
-for id, str in result['intersubs']['names'].items():
-    vals = result['intersubs']['values'][id]
-    if isinstance(vals, matlab.double):
-        # Need to "flatten" the list because every element comes wrapped in its own list.
-        intersubs_dict[str] = [val for sublist in vals for val in sublist]
-    else:
-        intersubs_dict[str] = vals
+def get_intersubunit_data_dict(lovamap_data: dict) -> dict:
+    result = {}
+    for id, str in lovamap_data['intersubs']['names'].items():
+        vals = lovamap_data['intersubs']['values'][id]
+        if isinstance(vals, matlab.double):
+            # Need to "flatten" the list because every element comes wrapped in its own list.
+            result[str] = [val for sublist in vals for val in sublist]
+        else:
+            result[str] = vals
+    return result
 
-subs_dict = {}
-for id, str in result['subs']['names'].items():
-    vals = result['subs']['values'][id]
-    if isinstance(vals, matlab.double):
-        # Need to "flatten" the list because every element comes wrapped in its own list.
-        subs_dict[str] = [val for sublist in vals for val in sublist]
-    else:
-        subs_dict[str] = vals
+def get_subunit_data_dict(lovamap_data: dict) -> dict:
+    result = {}
+    for id, str in lovamap_data['subs']['names'].items():
+        vals = lovamap_data['subs']['values'][id]
+        if isinstance(vals, matlab.double):
+            # Need to "flatten" the list because every element comes wrapped in its own list.
+            result[str] = [val for sublist in vals for val in sublist]
+        else:
+            result[str] = vals
+    return result
 
-if isinstance(result['isInteriorSub'], matlab.logical):
-    result['isInteriorSub'] = [val for sublist in result['isInteriorSub'] for val in sublist]
-
-
+def data_dict_to_df(data_dict: dict) -> pd.DataFrame:
+    # We don't expect all the data to be the same length, so we must concatenate ourselves.
+    return pd.concat([pd.DataFrame({key: value}) for key, value in data_dict.items()], axis=1)
 
 ## Cell
 import pandas as pd
 
 # Form all three distinct DataFrames before gluing together to write to Excel.
 
-df_global = pd.DataFrame.from_dict(global_dict)
-
-df_intersubs = pd.DataFrame()
-for key, value in intersubs_dict.items():
-    df_intersubs = pd.concat([df_intersubs, pd.DataFrame({key: value})], axis=1)
-
-df_subs = pd.DataFrame()
-for key, value in subs_dict.items():
-    df_subs = pd.concat([df_subs, pd.DataFrame({key: value})], axis=1)
-
+df_global = data_dict_to_df(get_global_data_dict(lovamap_data))
+df_intersubs = data_dict_to_df(get_intersubunit_data_dict(lovamap_data))
+df_subs = data_dict_to_df(get_subunit_data_dict(lovamap_data))
 
 
 ## Cell
@@ -67,35 +63,6 @@ excel.ExcelFormatter.header_style = None
 # or do the following:
 
 with pd.ExcelWriter('./output.xlsx') as writer:
-    df_global.to_excel(writer, sheet_name='Global', header=False, index=False)
+    df_global.to_excel(writer, sheet_name='Global', index=False)
     df_intersubs.to_excel(writer, sheet_name='Intersub', index=False)
     df_subs.to_excel(writer, sheet_name='Subunit', index=False)
-
-
-# Given a list of excel files, merge them into one file.
-import ntpath
-ntpath.basename("a/b/c")
-
-all_dfs = {}
-for file in excel_files:
-    excel = pd.ExcelFile(file)
-    all_dfs[file] = {sheet: excel.parse(sheet) for sheet in excel.sheet_names}
-
-with pd.ExcelWriter('./output.xlsx') as writer:
-    for file, dfs in all_dfs.items():
-        # Take everything after the first underscore, but remove the extension.
-        # Only take at most 30 characters.
-        sheet_name = ntpath.basename(file).split('_', 1)[1].split('.', 1)[0]
-        sheet_name = sheet_name[:30] if len(sheet_name) > 30 else sheet_name
-        dfs['Global'].to_excel(writer, sheet_name=sheet_name, header=False, index=False, startrow=0, startcol=0)
-        dfs['Intersub'].to_excel(writer, sheet_name=sheet_name, index=False, startrow=len(dfs['Global'].index), startcol=0)
-        dfs['Subunit'].to_excel(writer, sheet_name=sheet_name, index=False, startrow=len(dfs['Global'].index), startcol=len(dfs['Intersub'].columns))
-
-    # Write one final sheet of cumulated data
-    df_all_global = pd.concat([dfs['Global'] for dfs in all_dfs.values()], axis=1)
-    df_all_intersub = pd.concat([dfs['Intersub'] for dfs in all_dfs.values()], axis=0)
-    df_all_sub = pd.concat([dfs['Subunit'] for dfs in all_dfs.values()], axis=0)
-
-    df_all_global.to_excel(writer, sheet_name='Cumulative data', header=False, index=False, startrow=0, startcol=0)
-    df_all_intersub.to_excel(writer, sheet_name='Cumulative data', index=False, startrow=len(df_all_global.index), startcol=0)
-    df_all_sub.to_excel(writer, sheet_name='Cumulative data', index=False, startrow=len(df_all_global.index), startcol=len(df_all_intersub.columns))
