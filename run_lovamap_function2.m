@@ -1,12 +1,5 @@
 function [result] = run_lovamap_function2(full_file_path, folder_subtype, filename, output_path)
 
-    % File parameters
-    % filename          = 'beadInfo_square150.dat';
-    % file_path         = ['./domain_spheres/square/', filename];
-    % excel_path        = './outputs/';
-    output_path = [output_path, '\'];
-
-
     % Input parameters
     voxel_size        = 2;
     voxel_range       = [1e7, 1e8]; % desired resolution
@@ -16,13 +9,6 @@ function [result] = run_lovamap_function2(full_file_path, folder_subtype, filena
     shell_thickness   = 4;          % in um
     num_2D_slices     = 30;
     combine_edge_subs = true;       % set to false for real scaffolds
-
-    % Output parameters
-    generate_raw_data = true;       % export data to excel
-    interior_only     = true;       % output interior subunits only
-
-    % Label output files with date stamp
-    dateStamp = datestr(now, 'yymmdd-HHMM');
 
     % Run LOVAMAP
     [data, time_log] = LOVAMAP(full_file_path, voxel_size, voxel_range, crop_percent, dip_percent, ...
