@@ -30,7 +30,7 @@ function [result] = run_lovamap_function2(full_file_path, folder_subtype, filena
 
     result = struct();
     result.global = struct();
-    result.intersubs = struct();
+    result.nonsubs = struct();
     result.subs = struct();
     reuslt.isInteriorSub = true(data.Descriptors.Global.numSubs, 1);
 
@@ -47,15 +47,15 @@ function [result] = run_lovamap_function2(full_file_path, folder_subtype, filena
     end
 
     % 2. Reorganize inter-subunit descriptor data
-    intersub_fields = fieldnames(data.Descriptors.InterSubs);
-    num_intersub_desc = length(data.Descriptors.InterSubs.names);
-    result.intersubs.names = struct();
-    result.intersubs.values = struct();
+    nonsub_fields = fieldnames(data.Descriptors.NonSubs);
+    num_nonsub_desc = length(data.Descriptors.NonSubs.names);
+    result.nonsubs.names = struct();
+    result.nonsubs.values = struct();
 
     for i = 1 : num_intersub_desc
         % First entry of `intersub_fields` contains the names of the descriptors
-        result.intersubs.names.(intersub_fields{i + 1}) = data.Descriptors.InterSubs.names{i};
-        result.intersubs.values.(intersub_fields{i + 1}) = data.Descriptors.InterSubs.(intersub_fields{i + 1});
+        result.nonsubs.names.(intersub_fields{i + 1}) = data.Descriptors.NonSubs.names{i};
+        result.nonsubs.values.(intersub_fields{i + 1}) = data.Descriptors.NonSubs.(intersub_fields{i + 1});
     end
 
     % 3. Write out subunit descriptor data
